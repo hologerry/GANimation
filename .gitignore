@@ -1,1 +1,7 @@
 *.whl
+data_root/
+output/
+cuda*
+checkpoints/
+eval_attr/
+eval_fid/

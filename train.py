@@ -1,6 +1,7 @@
 import time
 from options.train_options import TrainOptions
 from data.custom_dataset_data_loader import CustomDatasetDataLoader
+from data.dataloader import get_dataloader
 from models.models import ModelsFactory
 from utils.tb_visualizer import TBVisualizer
 from collections import OrderedDict
@@ -10,16 +11,18 @@ import os
 class Train:
     def __init__(self):
         self._opt = TrainOptions().parse()
-        data_loader_train = CustomDatasetDataLoader(self._opt, is_for_train=True)
-        data_loader_test = CustomDatasetDataLoader(self._opt, is_for_train=False)
+        # data_loader_train = CustomDatasetDataLoader(self._opt, is_for_train=True)
+        # data_loader_test = CustomDatasetDataLoader(self._opt, is_for_train=False)
+        data_loader_train = get_dataloader(self._opt.data_dir, img_size=self._opt.image_size, selected_attrs=self._opt.selected_attrs, mode='train', batch_size=self._opt.batch_size)
+        data_loader_test = get_dataloader(self._opt.data_dir, img_size=self._opt.image_size, selected_attrs=self._opt.selected_attrs, mode='val', batch_size=self._opt.batch_size)
 
-        self._dataset_train = data_loader_train.load_data()
-        self._dataset_test = data_loader_test.load_data()
+        self._dataset_train = data_loader_train
+        self._dataset_test = data_loader_test
 
         self._dataset_train_size = len(data_loader_train)
         self._dataset_test_size = len(data_loader_test)
-        print('#train images = %d' % self._dataset_train_size)
-        print('#test images = %d' % self._dataset_test_size)
+        print('#train image batches = %d' % self._dataset_train_size)  # dataloader size, not dataset size
+        print('#test image batches = %d' % self._dataset_test_size)    # dataloader size, not dataset size
 
         self._model = ModelsFactory.get_by_name(self._opt.model, self._opt)
         self._tb_visualizer = TBVisualizer(self._opt)
@@ -28,7 +31,7 @@ class Train:
 
     def _train(self):
         self._total_steps = self._opt.load_epoch * self._dataset_train_size
-        self._iters_per_epoch = self._dataset_train_size / self._opt.batch_size
+        self._iters_per_epoch = self._dataset_train_size  # / self._opt.batch_size
         self._last_display_time = None
         self._last_save_latest_time = None
         self._last_print_time = time.time()
@@ -117,14 +120,14 @@ class Train:
             errors = self._model.get_current_errors()
 
             # store current batch errors
-            for k, v in errors.iteritems():
+            for k, v in errors.items():
                 if k in val_errors:
                     val_errors[k] += v
                 else:
                     val_errors[k] = v
 
         # normalize errors
-        for k in val_errors.iterkeys():
+        for k in val_errors.keys():
             val_errors[k] /= self._opt.num_iters_validate
 
         # visualize

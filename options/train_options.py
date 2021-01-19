@@ -10,8 +10,8 @@ class TrainOptions(BaseOptions):
         self._parser.add_argument('--display_freq_s', type=int, default=300, help='frequency [s] of showing training results on screen')
         self._parser.add_argument('--save_latest_freq_s', type=int, default=3600, help='frequency of saving the latest results')
 
-        self._parser.add_argument('--nepochs_no_decay', type=int, default=20, help='# of epochs at starting learning rate')
-        self._parser.add_argument('--nepochs_decay', type=int, default=10, help='# of epochs to linearly decay learning rate to zero')
+        self._parser.add_argument('--nepochs_no_decay', type=int, default=80, help='# of epochs at starting learning rate')
+        self._parser.add_argument('--nepochs_decay', type=int, default=20, help='# of epochs to linearly decay learning rate to zero')
 
         self._parser.add_argument('--train_G_every_n_iterations', type=int, default=5, help='train G every n interations')
         self._parser.add_argument('--poses_g_sigma', type=float, default=0.06, help='initial learning rate for adam')

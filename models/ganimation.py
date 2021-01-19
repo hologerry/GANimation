@@ -75,37 +75,37 @@ class GANimation(BaseModel):
         self._criterion_D_cond = torch.nn.MSELoss().cuda()
 
         # init losses G
-        self._loss_g_fake = Variable(self._Tensor([0]))
-        self._loss_g_cond = Variable(self._Tensor([0]))
-        self._loss_g_cyc = Variable(self._Tensor([0]))
-        self._loss_g_mask_1 = Variable(self._Tensor([0]))
-        self._loss_g_mask_2 = Variable(self._Tensor([0]))
-        self._loss_g_idt = Variable(self._Tensor([0]))
-        self._loss_g_masked_fake = Variable(self._Tensor([0]))
-        self._loss_g_masked_cond = Variable(self._Tensor([0]))
-        self._loss_g_mask_1_smooth = Variable(self._Tensor([0]))
-        self._loss_g_mask_2_smooth = Variable(self._Tensor([0]))
-        self._loss_rec_real_img_rgb = Variable(self._Tensor([0]))
-        self._loss_g_fake_imgs_smooth = Variable(self._Tensor([0]))
-        self._loss_g_unmasked_rgb = Variable(self._Tensor([0]))
+        self._loss_g_fake = torch.zeros(1).cuda()
+        self._loss_g_cond = torch.zeros(1).cuda()
+        self._loss_g_cyc = torch.zeros(1).cuda()
+        self._loss_g_mask_1 = torch.zeros(1).cuda()
+        self._loss_g_mask_2 = torch.zeros(1).cuda()
+        self._loss_g_idt = torch.zeros(1).cuda()
+        self._loss_g_masked_fake = torch.zeros(1).cuda()
+        self._loss_g_masked_cond = torch.zeros(1).cuda()
+        self._loss_g_mask_1_smooth = torch.zeros(1).cuda()
+        self._loss_g_mask_2_smooth = torch.zeros(1).cuda()
+        self._loss_rec_real_img_rgb = torch.zeros(1).cuda()
+        self._loss_g_fake_imgs_smooth = torch.zeros(1).cuda()
+        self._loss_g_unmasked_rgb = torch.zeros(1).cuda()
 
         # init losses D
-        self._loss_d_real = Variable(self._Tensor([0]))
-        self._loss_d_cond = Variable(self._Tensor([0]))
-        self._loss_d_fake = Variable(self._Tensor([0]))
-        self._loss_d_gp = Variable(self._Tensor([0]))
+        self._loss_d_real = torch.zeros(1).cuda()
+        self._loss_d_cond = torch.zeros(1).cuda()
+        self._loss_d_fake = torch.zeros(1).cuda()
+        self._loss_d_gp = torch.zeros(1).cuda()
 
     def set_input(self, input):
-        self._input_real_img.resize_(input['real_img'].size()).copy_(input['real_img'])
-        self._input_real_cond.resize_(input['real_cond'].size()).copy_(input['real_cond'])
-        self._input_desired_cond.resize_(input['desired_cond'].size()).copy_(input['desired_cond'])
+        self._input_real_img = input['real_img']  # .size()).copy_(input['real_img'])
+        self._input_real_cond = input['real_cond']  # .size()).copy_(input['real_cond'])
+        self._input_desired_cond = input['desired_cond']  # .size()).copy_(input['desired_cond'])
         self._input_real_id = input['sample_id']
         self._input_real_img_path = input['real_img_path']
 
         if len(self._gpu_ids) > 0:
-            self._input_real_img = self._input_real_img.cuda(self._gpu_ids[0], async=True)
-            self._input_real_cond = self._input_real_cond.cuda(self._gpu_ids[0], async=True)
-            self._input_desired_cond = self._input_desired_cond.cuda(self._gpu_ids[0], async=True)
+            self._input_real_img = self._input_real_img.cuda()
+            self._input_real_cond = self._input_real_cond.cuda()
+            self._input_desired_cond = self._input_desired_cond.cuda()
 
     def set_train(self):
         self._G.train()
@@ -120,12 +120,12 @@ class GANimation(BaseModel):
     def get_image_paths(self):
         return OrderedDict([('real_img', self._input_real_img_path)])
 
-    def forward(self, keep_data_for_visuals=False, return_estimates=False):
+    def forward(self, keep_data_for_visuals=False, return_estimates=False, return_for_eval=False):
         if not self._is_train:
             # convert tensor to variables
-            real_img = Variable(self._input_real_img, volatile=True)
-            real_cond = Variable(self._input_real_cond, volatile=True)
-            desired_cond = Variable(self._input_desired_cond, volatile=True)
+            real_img = self._input_real_img # , volatile=True)
+            real_cond = self._input_real_cond # , volatile=True)
+            desired_cond = self._input_desired_cond # , volatile=True)
 
             # generate fake images
             fake_imgs, fake_img_mask = self._G.forward(real_img, desired_cond)
@@ -135,7 +135,8 @@ class GANimation(BaseModel):
             rec_real_img_rgb, rec_real_img_mask = self._G.forward(fake_imgs_masked, real_cond)
             rec_real_img_mask = self._do_if_necessary_saturate_mask(rec_real_img_mask, saturate=self._opt.do_saturate_mask)
             rec_real_imgs = rec_real_img_mask * fake_imgs_masked + (1 - rec_real_img_mask) * rec_real_img_rgb
-
+            if return_for_eval:
+                return fake_imgs_masked
             imgs = None
             data = None
             if return_estimates:
@@ -199,9 +200,9 @@ class GANimation(BaseModel):
         if self._is_train:
             # convert tensor to variables
             self._B = self._input_real_img.size(0)
-            self._real_img = Variable(self._input_real_img)
-            self._real_cond = Variable(self._input_real_cond)
-            self._desired_cond = Variable(self._input_desired_cond)
+            self._real_img = self._input_real_img
+            self._real_cond = self._input_real_cond
+            self._desired_cond = self._input_desired_cond
 
             # train D
             loss_D, fake_imgs_masked = self._forward_D()
@@ -209,7 +210,7 @@ class GANimation(BaseModel):
             loss_D.backward()
             self._optimizer_D.step()
 
-            loss_D_gp= self._gradinet_penalty_D(fake_imgs_masked)
+            loss_D_gp = self._gradinet_penalty_D(fake_imgs_masked)
             self._optimizer_D.zero_grad()
             loss_D_gp.backward()
             self._optimizer_D.step()
@@ -289,7 +290,7 @@ class GANimation(BaseModel):
     def _gradinet_penalty_D(self, fake_imgs_masked):
         # interpolate sample
         alpha = torch.rand(self._B, 1, 1, 1).cuda().expand_as(self._real_img)
-        interpolated = Variable(alpha * self._real_img.data + (1 - alpha) * fake_imgs_masked.data, requires_grad=True)
+        interpolated = alpha * self._real_img + (1 - alpha) * fake_imgs_masked # , requires_grad=True)
         interpolated_prob, _ = self._D(interpolated)
 
         # compute gradients
@@ -315,23 +316,23 @@ class GANimation(BaseModel):
                torch.sum(torch.abs(mat[:, :, :-1, :] - mat[:, :, 1:, :]))
 
     def get_current_errors(self):
-        loss_dict = OrderedDict([('g_fake', self._loss_g_fake.data[0]),
-                                 ('g_cond', self._loss_g_cond.data[0]),
-                                 ('g_mskd_fake', self._loss_g_masked_fake.data[0]),
-                                 ('g_mskd_cond', self._loss_g_masked_cond.data[0]),
-                                 ('g_cyc', self._loss_g_cyc.data[0]),
-                                 ('g_rgb', self._loss_rec_real_img_rgb.data[0]),
-                                 ('g_rgb_un', self._loss_g_unmasked_rgb.data[0]),
-                                 ('g_rgb_s', self._loss_g_fake_imgs_smooth.data[0]),
-                                 ('g_m1', self._loss_g_mask_1.data[0]),
-                                 ('g_m2', self._loss_g_mask_2.data[0]),
-                                 ('g_m1_s', self._loss_g_mask_1_smooth.data[0]),
-                                 ('g_m2_s', self._loss_g_mask_2_smooth.data[0]),
-                                 ('g_idt', self._loss_g_idt.data[0]),
-                                 ('d_real', self._loss_d_real.data[0]),
-                                 ('d_cond', self._loss_d_cond.data[0]),
-                                 ('d_fake', self._loss_d_fake.data[0]),
-                                 ('d_gp', self._loss_d_gp.data[0])])
+        loss_dict = OrderedDict([('g_fake', self._loss_g_fake.item()),
+                                 ('g_cond', self._loss_g_cond.item()),
+                                 ('g_mskd_fake', self._loss_g_masked_fake.item()),
+                                 ('g_mskd_cond', self._loss_g_masked_cond.item()),
+                                 ('g_cyc', self._loss_g_cyc.item()),
+                                 ('g_rgb', self._loss_rec_real_img_rgb.item()),
+                                 ('g_rgb_un', self._loss_g_unmasked_rgb.item()),
+                                 ('g_rgb_s', self._loss_g_fake_imgs_smooth.item()),
+                                 ('g_m1', self._loss_g_mask_1.item()),
+                                 ('g_m2', self._loss_g_mask_2.item()),
+                                 ('g_m1_s', self._loss_g_mask_1_smooth.item()),
+                                 ('g_m2_s', self._loss_g_mask_2_smooth.item()),
+                                 ('g_idt', self._loss_g_idt.item()),
+                                 ('d_real', self._loss_d_real.item()),
+                                 ('d_cond', self._loss_d_cond.item()),
+                                 ('d_fake', self._loss_d_fake.item()),
+                                 ('d_gp', self._loss_d_gp.item())])
 
         return loss_dict
 
@@ -344,9 +345,12 @@ class GANimation(BaseModel):
 
         # input visuals
         title_input_img = os.path.basename(self._input_real_img_path[0])
-        visuals['1_input_img'] = plot_utils.plot_au(self._vis_real_img, self._vis_real_cond, title=title_input_img)
-        visuals['2_fake_img'] = plot_utils.plot_au(self._vis_fake_img, self._vis_desired_cond)
-        visuals['3_rec_real_img'] = plot_utils.plot_au(self._vis_rec_real_img, self._vis_real_cond)
+        # visuals['1_input_img'] = plot_utils.plot_au(self._vis_real_img, self._vis_real_cond, title=title_input_img)
+        # visuals['2_fake_img'] = plot_utils.plot_au(self._vis_fake_img, self._vis_desired_cond)
+        # visuals['3_rec_real_img'] = plot_utils.plot_au(self._vis_rec_real_img, self._vis_real_cond)
+        visuals['1_input_img'] = self._vis_real_img
+        visuals['2_fake_img'] = self._vis_fake_img
+        visuals['3_rec_real_img'] = self._vis_rec_real_img
         visuals['4_fake_img_unmasked'] = self._vis_fake_img_unmasked
         visuals['5_fake_img_mask'] = self._vis_fake_img_mask
         visuals['6_rec_real_img_mask'] = self._vis_rec_real_img_mask

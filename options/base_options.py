@@ -9,18 +9,18 @@ class BaseOptions():
         self._initialized = False
 
     def initialize(self):
-        self._parser.add_argument('--data_dir', type=str, help='path to dataset')
+        self._parser.add_argument('--data_dir', type=str, default='data_root', help='path to dataset')
         self._parser.add_argument('--train_ids_file', type=str, default='train_ids.csv', help='file containing train ids')
         self._parser.add_argument('--test_ids_file', type=str, default='test_ids.csv', help='file containing test ids')
         self._parser.add_argument('--images_folder', type=str, default='imgs', help='images folder')
         self._parser.add_argument('--aus_file', type=str, default='aus_openface.pkl', help='file containing samples aus')
 
         self._parser.add_argument('--load_epoch', type=int, default=-1, help='which epoch to load? set to -1 to use latest cached model')
-        self._parser.add_argument('--batch_size', type=int, default=4, help='input batch size')
+        self._parser.add_argument('--batch_size', type=int, default=32, help='input batch size')
         self._parser.add_argument('--image_size', type=int, default=128, help='input image size')
         self._parser.add_argument('--cond_nc', type=int, default=17, help='# of conditions')
-        self._parser.add_argument('--gpu_ids', type=str, default='0', help='gpu ids: e.g. 0  0,1,2, 0,2. use -1 for CPU')
-        self._parser.add_argument('--name', type=str, default='experiment_1', help='name of the experiment. It decides where to store samples and models')
+        self._parser.add_argument('--gpu_ids', type=str, default='0,1', help='gpu ids: e.g. 0  0,1,2, 0,2. use -1 for CPU')
+        self._parser.add_argument('--name', type=str, default='experiment_celebahq', help='name of the experiment. It decides where to store samples and models')
         self._parser.add_argument('--dataset_mode', type=str, default='aus', help='chooses dataset to be used')
         self._parser.add_argument('--model', type=str, default='ganimation', help='model to run[au_net_model]')
         self._parser.add_argument('--n_threads_test', default=1, type=int, help='# threads for loading data')
@@ -28,9 +28,12 @@ class BaseOptions():
         self._parser.add_argument('--serial_batches', action='store_true', help='if true, takes images in order to make batches, otherwise takes them randomly')
         self._parser.add_argument('--do_saturate_mask', action="store_true", default=False, help='do use mask_fake for mask_cyc')
 
+        self._parser.add_argument('--selected_attrs', type=list, default=['Arched_Eyebrows', 'Black_Hair', 'Blond_Hair', 'Brown_Hair', 'Eyeglasses',
+                                 'Gray_Hair', 'Heavy_Makeup', 'Male', 'Mouth_Slightly_Open', 'Mustache',
+                                 'No_Beard', 'Smiling', 'Young', 'Skin_0', 'Skin_1', 'Skin_2', 'Skin_3'])
 
-
-
+        self._parser.add_argument('--dims', type=int, default=2048,
+                                  help=('Dimensionality of Inception features to use. By default, uses pool3 features'))
         self._initialized = True
 
     def parse(self):
