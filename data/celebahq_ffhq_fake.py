@@ -49,6 +49,10 @@ class CelebAHQFFHQFake(data.Dataset):
         self.train_dataset = self.celeba_train_dataset + self.ffhq_train_dataset
         self.test_dataset = self.celeba_test_dataset + self.ffhq_test_dataset
 
+        if self.mode == 'ffhq_test':
+            self.test_dataset = self.ffhq_test_dataset[:len(self.ffhq_test_dataset)//2]  # part 1
+            self.num_image_attr_pairs = len(self.test_dataset)
+
     def celeba_preprocess(self):
         assert os.path.exists(self.celeba_image_dir), f'Image data directory does not exist: {self.celeba_image_dir}'
         assert os.path.exists(self.celeba_attr_file), f'Attribute file does not exist: {self.celeba_attr_file}'
@@ -100,17 +104,6 @@ class CelebAHQFFHQFake(data.Dataset):
                 self.ffhq_train_dataset.append([filepath, label])
         print(f'Finished preprocessing the {self.ffhq_dataset_name} dataset...')
 
-    def random_disturb_label(self, label):
-        # here we do not consider the mutual exclusion for hair, skin, and beard,
-        # since this is a fake sample, no need to be reasonable and the probability is small
-        disturb_num = random.randint(1, 3)
-        all_attr_idxes = [i for i in range(len(self.selected_attrs))]
-        disturb_idxes = random.choices(all_attr_idxes, k=disturb_num)
-        disturbed_label = copy.deepcopy(label)
-        for d_idx in disturb_idxes:
-            disturbed_label[d_idx] = 1.0 - disturbed_label[d_idx]
-        return disturbed_label
-
     def __getitem__(self, index):
         if self.mode == 'train':
             filename_a, label_a = self.train_dataset[index]
@@ -130,8 +123,8 @@ class CelebAHQFFHQFake(data.Dataset):
             filename_a, label_a = self.test_dataset[index]
             random_index_b = random.randint(0, len(self.test_dataset) - 1)
             while random_index_b == index:
-                random_index_b = random.randint(0, len(self.celeba_test_dataset) - 1)
-            filename_b, label_b = self.celeba_test_dataset[random_index_b]
+                random_index_b = random.randint(0, len(self.test_dataset) - 1)
+            filename_b, label_b = self.test_dataset[random_index_b]
             image_a = Image.open(filename_a)
             image_b = Image.open(filename_b)
             return {
@@ -141,10 +134,7 @@ class CelebAHQFFHQFake(data.Dataset):
             }
 
         else:  # mode 'test', 'eval_part1', 'eval_part2'
-            if index < len(self.celeba_test_dataset):
-                filename_a, label_a = self.celeba_test_dataset[index]
-            else:
-                filename_a, label_a = self.ffhq_test_dataset[index - len(self.celeba_test_dataset)]
+            filename_a, label_a = self.test_dataset[index]
             image_a = Image.open(filename_a)
 
             return {

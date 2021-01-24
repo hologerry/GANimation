@@ -9,7 +9,7 @@ class BaseOptions():
         self._initialized = False
 
     def initialize(self):
-        self._parser.add_argument('--data_dir', type=str, default='data_root', help='path to dataset')
+        self._parser.add_argument('--data_dir', type=str, help='path to dataset')
         self._parser.add_argument('--train_ids_file', type=str, default='train_ids.csv', help='file containing train ids')
         self._parser.add_argument('--test_ids_file', type=str, default='test_ids.csv', help='file containing test ids')
         self._parser.add_argument('--images_folder', type=str, default='imgs', help='images folder')

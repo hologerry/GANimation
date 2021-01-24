@@ -172,6 +172,7 @@ def main():
     all_attr_eval_dict = {}
     for attr_name, attr_pred in zip(opts.selected_attrs, each_attr_avg):
         all_attr_eval_dict[attr_name] = attr_pred
+        print(f"Eval {attr_name}: {attr_pred}")
     # for k, v in all_attr_eval_dict.items():
     #     writer.add_scalar(f"Eval_Each_Attr/{k}", v, epoch)
 

@@ -25,7 +25,7 @@ def get_image_transform(img_size, mode='train', crop='random', crop_prob=0.5, ra
 
 
 
-def get_dataloader(data_root='data_root', dataset_name='celebahq', mode='train', img_size=256, selected_attrs=None,
+def get_dataloader(data_root='data_root', dataset_name='celebahq_ffhq_fake', mode='train', img_size=256, selected_attrs=None,
                    batch_size=2, random_flip_ratio=1.0):
     print(f'Preparing DataLoader to fetch {dataset_name} images in {mode}...')
     dataset = None
