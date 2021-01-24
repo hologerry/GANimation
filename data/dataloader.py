@@ -17,6 +17,9 @@ def get_image_transform(img_size, mode='train', crop='random', crop_prob=0.5, ra
     #     transforms.append(crop)
 
     transforms.append(T.Resize([img_size, img_size]))
+    if img_size == 256:
+        transforms.append(T.CenterCrop(178))
+        transforms.append(T.Resize([128, 128]))
     if random_flip_ratio > 0.0 and mode == 'train':
         transforms.append(T.RandomHorizontalFlip(random_flip_ratio))
     transforms += [T.ToTensor(), T.Normalize(mean=[0.5, 0.5, 0.5], std=[0.5, 0.5, 0.5])]
